@@ -269,6 +269,7 @@ class Oven(threading.Thread):
             'heat': self.heat,
             'totaltime': self.totaltime,
             'profile': self.profile.name if self.profile else None,
+            'pidstats': self.pid.pidstats,
         }
         return state
 
@@ -452,6 +453,7 @@ class PID():
         self.lastNow = datetime.datetime.now()
         self.iterm = 0
         self.lastErr = 0
+        self.pidstats = {}
 
     # FIX - this was using a really small window where the PID control
     # takes effect from -1 to 1. I changed this to various numbers and
@@ -487,6 +489,22 @@ class PID():
 
         output = float(output / window_size)
 
+        self.pidstats = {
+            'time': time.mktime(now.timetuple()),
+            'timeDelta': timeDelta,
+            'setpoint': setpoint,
+            'ispoint': ispoint,
+            'err': error,
+            'errDelta': dErr,
+            'p': self.kp * error,
+            'i': self.iterm,
+            'd': self.kd * dErr,
+            'kp': self.kp,
+            'ki': self.ki,
+            'kd': self.kd,
+            'pid': out4logs,
+            'out': output,
+        }
         if out4logs > 0:
 #            log.info("pid percents pid=%0.2f p=%0.2f i=%0.2f d=%0.2f" % (out4logs,
 #                ((self.kp * error)/out4logs)*100,
