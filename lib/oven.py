@@ -32,10 +32,10 @@ class Output(object):
         if tuning:
             return
         time.sleep(sleepfor)
-        self.GPIO.output(config.gpio_heat, self.GPIO.LOW)
 
     def cool(self,sleepfor):
         '''no active cooling, so sleep'''
+        self.GPIO.output(config.gpio_heat, self.GPIO.LOW)
         time.sleep(sleepfor)
 
 # FIX - Board class needs to be completely removed
@@ -386,6 +386,10 @@ class RealOven(Oven):
         # start thread
         self.start()
 
+    def reset(self):
+        super().reset()
+        self.output.cool(0)
+
     def heat_then_cool(self):
         pid = self.pid.compute(self.target,
                                self.board.temp_sensor.temperature +
@@ -398,8 +402,10 @@ class RealOven(Oven):
         if heat_on > 0:
             self.heat = 1.0
 
-        self.output.heat(heat_on)
-        self.output.cool(heat_off)
+        if heat_on:
+            self.output.heat(heat_on)
+        if heat_off:
+            self.output.cool(heat_off)
         time_left = self.totaltime - self.runtime
         log.info("temp=%.2f, target=%.2f, pid=%.3f, heat_on=%.2f, heat_off=%.2f, run_time=%d, total_time=%d, time_left=%d" %
             (self.board.temp_sensor.temperature + config.thermocouple_offset,
