@@ -49,6 +49,9 @@ gpio_sensor_di = 10 # only used with max31856
 ### value is used.
 sensor_time_wait = 2
 
+# GPIO to use for the beeper
+gpio_beeper = 12
+
 
 ########################################################################
 #
