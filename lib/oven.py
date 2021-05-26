@@ -233,12 +233,13 @@ class Oven(threading.Thread):
 
     def update_runtime(self):
         runtime_delta = datetime.datetime.now() - self.start_time
+        if runtime_delta.total_seconds() < 0:
+            runtime_delta = datetime.timedelta(0)
+
         if self.startat > 0:
             self.runtime = self.startat + runtime_delta.total_seconds()
         else:
             self.runtime = runtime_delta.total_seconds()
-        if self.runtime < 0:
-            self.runtime = 0
 
     def update_target_temp(self):
         self.target = self.profile.get_target_temperature(self.runtime)
@@ -286,10 +287,10 @@ class Oven(threading.Thread):
                 time.sleep(1)
                 continue
             if self.state == "RUNNING":
-                catching_up = self.kiln_must_catch_up()
+                self.kiln_must_catch_up()
                 self.update_runtime()
                 self.update_target_temp()
-                self.heat_then_cool(catching_up)
+                self.heat_then_cool()
                 self.reset_if_emergency()
                 self.reset_if_schedule_ended()
 
@@ -341,11 +342,10 @@ class SimulatedOven(Oven):
         self.temperature = self.t
         self.board.temp_sensor.temperature = self.t
 
-    def heat_then_cool(self, catching_up):
+    def heat_then_cool(self):
         pid = self.pid.compute(self.target,
                                self.board.temp_sensor.temperature +
-                               config.thermocouple_offset,
-                               catching_up)
+                               config.thermocouple_offset)
         heat_on = float(self.time_step * pid)
         heat_off = float(self.time_step * (1 - pid))
 
@@ -475,7 +475,7 @@ class PID():
     # settled on -50 to 50 and then divide by 50 at the end. This results
     # in a larger PID control window and much more accurate control...
     # instead of what used to be binary on/off control.
-    def compute(self, setpoint, ispoint, catching_up):
+    def compute(self, setpoint, ispoint):
         now = datetime.datetime.now()
         timeDelta = (now - self.lastNow).total_seconds()
 
@@ -485,7 +485,8 @@ class PID():
 
         if self.ki > 0:
             if config.stop_integral_windup == True:
-                if self.kp * error < window_size and not catching_up:
+                margin = setpoint * config.stop_integral_windup_margin/100
+                if (abs(error) <= abs(margin)):
                     self.iterm += (error * timeDelta * (1/self.ki))
             else:
                 self.iterm += (error * timeDelta * (1/self.ki))
