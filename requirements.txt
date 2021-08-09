@@ -3,7 +3,7 @@ greenlet
 bottle
 gevent
 gevent-websocket
-#RPi.GPIO
+RPi.GPIO
 Adafruit-MAX31855
 Adafruit-GPIO
 websocket-client
