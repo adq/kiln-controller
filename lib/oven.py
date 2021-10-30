@@ -27,10 +27,8 @@ class Output(object):
             log.warning(msg)
             self.active = False
 
-    def heat(self,sleepfor, tuning=False):
+    def heat(self,sleepfor):
         self.GPIO.output(config.gpio_heat, self.GPIO.HIGH)
-        if tuning:
-            return
         time.sleep(sleepfor)
 
     def cool(self,sleepfor):
@@ -156,7 +154,7 @@ class TempSensorReal(TempSensor):
                 self.ok_count += 1
 
             else:
-                log.error(f"Problem reading temp N/C:{self.noConnection} GND:{self.shortToGround} VCC:{self.shortToVCC} ???:{self.unknownError}")
+                log.error("Problem reading temp N/C:%s GND:%s VCC:%s ???:%s" % (self.noConnection,self.shortToGround,self.shortToVCC,self.unknownError))
                 self.bad_count += 1
 
             if len(temps):
@@ -272,6 +270,8 @@ class Oven(threading.Thread):
             'state': self.state,
             'heat': self.heat,
             'totaltime': self.totaltime,
+            'kwh_rate': config.kwh_rate,
+            'currency_type': config.currency_type,
             'profile': self.profile.name if self.profile else None,
             'pidstats': self.pid.pidstats,
         }

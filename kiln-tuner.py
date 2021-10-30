@@ -46,7 +46,7 @@ def recordprofile(csvfile, targettemp):
     try:
         stage = 'heating'
         if not config.simulate:
-            oven.output.heat(1, tuning=True)
+            oven.output.heat(0)
 
         while True:
             temp = oven.board.temp_sensor.temperature + \
@@ -58,15 +58,14 @@ def recordprofile(csvfile, targettemp):
             if stage == 'heating':
                 if temp >= targettemp:
                     if not config.simulate:
-                        oven.output.heat(0)
+                        oven.output.cool(0)
                     stage = 'cooling'
 
             elif stage == 'cooling':
                 if temp < targettemp:
                     break
 
-            sys.stdout.write(f"\r{stage} {temp:.2f}/{targettemp}           ")
-            sys.stdout.flush()
+            print("stage = %s, actual = %s, target = %s" % (stage,temp,targettemp))
             time.sleep(1)
 
         f.close()
@@ -74,7 +73,7 @@ def recordprofile(csvfile, targettemp):
     finally:
         # ensure we always shut the oven down!
         if not config.simulate:
-            oven.output.heat(0)
+            oven.output.cool(0)
 
 
 def line(a, b, x):
@@ -162,8 +161,11 @@ def calculate(filename, tangentdivisor, showplot):
     Ki = Kp / Ti
     Kd = Kp * Td
 
-    # outut to the user
-    print(f"Kp: {Kp} 1/Ki: {1/ Ki}, Kd: {Kd}")
+    # output to the user
+    print("pid_kp = %s" % (Kp))
+    print("pid_ki = %s" % (1 / Ki))
+    print("pid_kd = %s" % (Kd))
+
 
     if showplot:
         plot(xdata, ydata,
@@ -203,4 +205,4 @@ if __name__ == "__main__":
         exit(1)
 
     else:
-        raise NotImplementedError(f"Unknown mode {args.mode}")
+        raise NotImplementedError("Unknown mode %s" % args.mode)
